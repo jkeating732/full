@@ -1,0 +1,48 @@
+- hosts: all
+  connection: local
+  gather_facts: False
+  become: False
+
+  tasks:
+    - name: Show the hostnames (IPs) that will be targeted from the inventory
+      debug: msg="{{ inventory_hostname }}"
+
+    # We have to get all instance facts because the JSON Query does not support a single item list. We get them all then sort through them looking for the IP.
+    - name: Getting all instance facts 
+      ec2_instance_facts:
+        region: us-west-2
+      register: ec2_info
+
+    # Shows the JSON from the above command for each inventory item (IP)
+    #- name: debug
+    #  debug: msg="{{ ec2_info }}"
+
+    # By initializing the variable we are telling Ansible it will be a list, it breaks without this.
+    - name: initialize an empty list
+      set_fact:
+        instanceids_strings: []
+
+    # We are adding the instance-id(s) to the list based on what we find in the JSON matching IP(s)
+    - name: Display Instance IDs based on ip
+      set_fact:
+        instanceids_strings: "{{ instanceids_strings + [ item ] }}" # Add instance-id to list
+      loop: "{{ ec2_info| json_query(server_ip_query) }}" # This is the loop with the search string as a variable
+      vars:
+        server_ip_query: "instances[?private_ip_address=='{{ inventory_hostname }}'].instance_id" # This search string allows us to do a "search" matching the IP, when found it will grab the instance-id
+
+    # We use the above variable and loop through it and to issue the terminate command
+    - name: Terminate instances with instance-id(s)
+      ec2:
+        region: us-west-2
+        state: absent # Avaialable states: present,absent,running,restarted,stopped 
+        instance_ids: "{{ item }}"
+      with_items: "{{ instanceids_strings }}"
+    
+    #- name: Terminate instance profile
+      #command: >
+        #aws iam delete-instance-profile --instance-profile-name ec2-demo-hosts
+      #environment:
+        #AWS_ACCESS_KEY_ID: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+        #AWS_SECRET_ACCESS_KEY: "{{ lookup('env','AWS_SECRET_KEY') }}"
+
+      
