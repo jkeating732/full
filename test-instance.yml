@@ -50,11 +50,9 @@
   tasks:
     - name: Update yum
       shell: yum update -y
-    - name: Install NTP Service
-      shell: yum install ntp -y
     - name: Install PreReqs for Tomcat
       shell: |
-        yum install java-1.8.0-openjdk.x86_64
+        yum install java-1.8.0-openjdk -y
         groupadd tomcat
         mkdir /opt/tomcat
         useradd -s /bin/nologin -g tomcat -d /opt/tomcat tomcat
@@ -104,8 +102,8 @@
         systemctl enable tomcat.service
     - name: Setting port forwarding
       shell: |
-        iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8081
-        iptables -I INPUT 1 -p tcp --dport 8081 -j ACCEPT
+        iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+        iptables -I INPUT 1 -p tcp --dport 8080 -j ACCEPT
     - name: Install AWS CLI
       shell: |
         yum install python -y
