@@ -62,7 +62,7 @@
       shell: |
         cd ~
         wget http://www-us.apache.org/dist/tomcat/tomcat-8/v8.5.33/bin/apache-tomcat-8.5.33.tar.gz
-        sudo tar -zxvf apache-tomcat-8.0.33.tar.gz -C /opt/tomcat --strip-components=1
+        sudo tar -zxvf apache-tomcat-8.5.33.tar.gz -C /opt/tomcat --strip-components=1
         cd /opt/tomcat
         chgrp -R tomcat conf
         chmod g+rwx conf
