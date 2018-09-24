@@ -53,7 +53,7 @@
       wait_for:
         port: 22
 
-- hosts: ec2hosts
+- hosts: all
   name: configuration play
   user: ec2-user
   gather_facts: true
