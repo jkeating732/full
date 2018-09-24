@@ -61,7 +61,7 @@
         if grep -q tomcat /etc/group
         then
             echo "group exists"
-            update = "yes"
+            update="yes"
         else
             groupadd tomcat
             mkdir /opt/tomcat
