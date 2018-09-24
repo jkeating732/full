@@ -59,8 +59,8 @@
     - name: Install Tomcat
       shell: |
         cd ~
-        wget http://www-us.apache.org/dist/tomcat/tomcat-9/v9.0.11/bin/apache-tomcat-9.0.11.tar.gz
-        sudo tar -zxvf apache-tomcat-9.0.11.tar.gz -C /opt/tomcat --strip-components=1
+        wget http://www-us.apache.org/dist/tomcat/tomcat-9/v9.0.12/bin/apache-tomcat-9.0.12.tar.gz
+        sudo tar -zxvf apache-tomcat-9.0.12.tar.gz -C /opt/tomcat --strip-components=1
         cd /opt/tomcat
         chgrp -R tomcat conf
         chmod g+rwx conf
