@@ -59,8 +59,8 @@
     - name: Install Tomcat
       shell: |
         cd ~
-        wget http://www-us.apache.org/dist/tomcat/tomcat-8/v8.5.33/bin/apache-tomcat-8.5.33.tar.gz
-        sudo tar -zxvf apache-tomcat-8.5.33.tar.gz -C /opt/tomcat --strip-components=1
+        wget wget http://www-us.apache.org/dist/tomcat/tomcat-9/v9.0.11/bin/apache-tomcat-9.0.11.tar.gz
+        sudo tar -zxvf apache-tomcat-9.0.11.tar.gz -C /opt/tomcat --strip-components=1
         cd /opt/tomcat
         chgrp -R tomcat conf
         chmod g+rwx conf
@@ -104,19 +104,3 @@
       shell: |
         iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
         iptables -I INPUT 1 -p tcp --dport 8080 -j ACCEPT
-    - name: Install AWS CLI
-      shell: |
-        yum install python -y
-        yum install python-pip -y
-        yum install unzip -y
-        pip install awscli
-    - name: Get S3 bucket listing & download
-      shell: |
-        BUCKET=nasa-new4
-        KEY=`aws s3 ls $BUCKET --recursive | sort | tail -n 1 | awk '{print $4}'`
-        aws s3 cp s3://$BUCKET/$KEY ./latest-object.zip
-        unzip ./latest-object.zip
-        ls -la
-        cd latest-object.zip
-        pwd
-        ls -la
