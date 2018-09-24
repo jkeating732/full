@@ -62,21 +62,107 @@
   tasks:
     - name: Update yum
       shell: yum update -y
-    - name: Install NTP Service
-      shell: yum install ntp -y
-    - name: Install AWS CLI
+    - name: ensure a list of packages installed
+      yum:
+        name: "{{ packages }}"
+      vars:
+        packages:
+        - java-1.8.0-openjdk
+    - name: Install PreReqs & Tomcat
       shell: |
-        yum install python -y
-        yum install python-pip -y
-        yum install unzip -y
-        pip install awscli
-    - name: Get S3 bucket listing & download
+        if grep -q tomcat /etc/group
+        then
+            echo "group exists"
+            update="yes"
+        else
+            groupadd tomcat
+            mkdir /opt/tomcat
+            useradd -s /bin/nologin -g tomcat -d /opt/tomcat tomcat
+            cd ~
+            wget http://www-us.apache.org/dist/tomcat/tomcat-9/v9.0.12/bin/apache-tomcat-9.0.12.tar.gz
+            sudo tar -zxvf apache-tomcat-9.0.12.tar.gz -C /opt/tomcat --strip-components=1
+            cd /opt/tomcat
+            chgrp -R tomcat conf
+            chmod g+rwx conf
+            chmod g+r conf/*
+            chown -R tomcat logs/ temp/ webapps/ work/
+            chgrp -R tomcat bin
+            chgrp -R tomcat lib
+            chmod g+rwx bin
+            chmod g+r bin/*
+        fi
+    - name: Creating Tomcat service file
+      copy:
+        dest: "/etc/systemd/system/tomcat.service"
+        content: |
+          [Unit]
+          Description=Apache Tomcat Web Application Container
+          After=syslog.target network.target
+
+          [Service]
+          Type=forking
+
+          Environment=JAVA_HOME=/usr/lib/jvm/jre
+          Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+          Environment=CATALINA_HOME=/opt/tomcat
+          Environment=CATALINA_BASE=/opt/tomcat
+          Environment='CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC'
+          Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+
+          ExecStart=/opt/tomcat/bin/startup.sh
+          ExecStop=/bin/kill -15 $MAINPID
+
+          User=tomcat
+          Group=tomcat
+
+          [Install]
+          WantedBy=multi-user.target
+    - name: Download & Deploy Artifact
       shell: |
-        BUCKET=nasa-new4
-        KEY=`aws s3 ls $BUCKET --recursive | sort | tail -n 1 | awk '{print $4}'`
-        aws s3 cp s3://$BUCKET/$KEY ./latest-object.zip
-        unzip ./latest-object.zip
-        ls -la
-        cd latest-object.zip
-        pwd
-        ls -la
+        if [ $update -eq "yes" ]
+        then
+          echo "no work"
+        else
+          # Artifactory location
+          server=http://10.0.100.93/artifactory
+          repo=nasa-full
+
+          # Maven artifact location
+          name=artifact
+          artifact=in28Minutes-springmvc-0.0.1-SNAPSHOT.war
+          path=$server/$repo/$artifact
+          #echo $path
+          #version=$(curl -s $path/maven-metadata.xml | grep latest | sed "s/.*<latest>\([^<]*\)<\/latest>.*/\1/")
+          #echo $version
+          #build=$(curl -s $path/$version/maven-metadata.xml | grep '<value>' | head -1 | sed "s/.*<value>\([^<]*\)<\/value>.*/\1/")
+          #echo $build
+          #war=$name-$build.war
+          #echo $war
+          #url=$path/$version/$war
+          url=$path
+
+          # Download
+          echo $url
+          wget -q -N $url -O /opt/tomcat/webapps/mywar.war
+          chown -R tomcat /opt/tomcat/webapps
+          chgrp -R tomcat /opt/tomcat/webapps
+          ls -la /opt/tomcat/webapps
+        fi
+    - name: Start Tomcat
+      shell: |
+        if [ $update -eq "yes" ]
+        then
+          systemctl restart tomcat.service
+        else
+          systemctl start tomcat.service
+          systemctl enable tomcat.service
+        fi
+    - name: Setting port forwarding
+      shell: |
+        if [ $update -eq "yes" ]
+        then
+          echo "no work"
+        else
+          iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+          iptables -I INPUT 1 -p tcp --dport 8080 -j ACCEPT
+        fi
