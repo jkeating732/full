@@ -96,6 +96,28 @@
 
           [Install]
           WantedBy=multi-user.target
+    - name: Download & Deploy Artifact
+      shell: |
+        # Artifactory location
+        server=http://10.0.100.93/artifactory
+        repo=nasa-full
+
+        # Maven artifact location
+        name=artifact
+        artifact=in28Minutes-springmvc-0.0.1-SNAPSHOT.war
+        path=$server/$repo/$artifact
+        echo $path
+        version=$(curl -s $path/maven-metadata.xml | grep latest | sed "s/.*<latest>\([^<]*\)<\/latest>.*/\1/")
+        echo $version
+        build=$(curl -s $path/$version/maven-metadata.xml | grep '<value>' | head -1 | sed "s/.*<value>\([^<]*\)<\/value>.*/\1/")
+        echo $build
+        war=$name-$build.war
+        echo $war
+        url=$path/$version/$war
+
+        # Download
+        echo $url
+        wget -q -N $url
     - name: Start Tomcat
       shell: |
         systemctl start tomcat.service
