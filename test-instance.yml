@@ -118,9 +118,10 @@
 
         # Download
         echo $url
-        wget -q -N $url
-        ls -la
-        pwd
+        wget -q -N $url -d /opt/tomcat/webapps
+        chown -R tomcat /opt/tomcat/webapps
+        chgrp -R tomcat /opt/tomcat/webapps
+        ls -la /opt/tomcat/webapps
     - name: Start Tomcat
       shell: |
         systemctl start tomcat.service
