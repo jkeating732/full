@@ -41,7 +41,7 @@
       wait_for:
         port: 22
 
-- hosts: ec2hosts
+- hosts: all
   name: configuration play
   user: ec2-user
   gather_facts: true
@@ -118,7 +118,7 @@
 
         # Download
         echo $url
-        wget -q -N $url -d /opt/tomcat/webapps
+        wget -q -N $url -O /opt/tomcat/webapps/mywar.war
         chown -R tomcat /opt/tomcat/webapps
         chgrp -R tomcat /opt/tomcat/webapps
         ls -la /opt/tomcat/webapps
